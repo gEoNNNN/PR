@@ -20,7 +20,7 @@ if response.status_code == 200:
     # Find all product items within the 'rht__products' div
     products = soup.find_all('div', class_='product__item')
 
-    # Loop through each product item to extract the name and price
+    # Loop through each product item to extract the name, price, and link
     for product in products:
         # Extract the product name
         name_tag = product.find('div', class_='product__name')
@@ -30,8 +30,15 @@ if response.status_code == 200:
         price_tag = product.find('div', class_='product__price')
         price = price_tag.get_text(strip=True) if price_tag else "No price found"
 
+        # Extract the product link (assuming it's in an 'a' tag inside the product item)
+        link_tag = product.find('a', href=True)
+        link = link_tag['href'] if link_tag else "No link found"
+        # Construct the full link if it's a relative path
+        full_link = f"https://bomba.md{link}" if link.startswith('/') else link
+
         print(f"Product Name: {name}")
         print(f"Price: {price}")
+        print(f"Link: {full_link}")
         print("-" * 40)
 else:
     print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
