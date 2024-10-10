@@ -1,6 +1,19 @@
 import requests
 from bs4 import BeautifulSoup
+import re
 
+def extract_and_convert_to_int(text):
+    # Use regex to find the part before "lei"
+    match = re.search(r'(\d+[\s\d]*)\s*lei', text)
+    if match:
+        # Remove both regular spaces and non-breaking spaces, then convert to an integer
+        cleaned_number = match.group(1).replace(" ", "").replace("\xa0", "")
+        return int(cleaned_number)
+    return None
+
+def add_space_before_uppercase(text):
+    # Use regex to add a space before each uppercase letter only if it's not preceded or followed by another uppercase letter.
+    return re.sub(r'(?<![A-Z])([A-Z])(?![A-Z])', r' \1', text).strip()
 
 # URL of the website you want to scrape
 url = "https://bomba.md/ro/category/telefoane-mobile-686094/apple/"
@@ -30,6 +43,7 @@ if response.status_code == 200:
         # Extract the product price
         price_tag = product.find('div', class_='product__price')
         price = price_tag.get_text(strip=True) if price_tag else "No price found"
+        price_int = extract_and_convert_to_int(price)
 
         # Extract the product link (assuming it's in an 'a' tag inside the product item)
         link_tag = product.find('a', href=True)
@@ -38,7 +52,7 @@ if response.status_code == 200:
         full_link = f"https://bomba.md{link}" if link.startswith('/') else link
 
         print(f"Product Name: {name}")
-        print(f"Price: {price}")
+        print(f"Price: {price_int}")
         print(f"Link: {full_link}")
 
         # Make a request to the product's detail page to scrape the 'product-bottom' section
@@ -49,8 +63,12 @@ if response.status_code == 200:
                 # Find the 'product-bottom' section and print its content
                 product_bottom = product_soup.find('section', class_='product-bottom')
                 if product_bottom:
+                    # Extract the text from product_bottom
+                    product_bottom_text = product_bottom.get_text(strip=True)
+                    # Add space before uppercase letters
+                    spaced_product_bottom = add_space_before_uppercase(product_bottom_text)
                     print("Product-Bottom Section:")
-                    print(product_bottom.get_text(strip=True))
+                    print(spaced_product_bottom)
                 else:
                     print("No 'product-bottom' section found.")
             else:
