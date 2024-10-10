@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 # URL of the website you want to scrape
 url = "https://bomba.md/ro/category/telefoane-mobile-686094/apple/"
 
@@ -39,6 +40,22 @@ if response.status_code == 200:
         print(f"Product Name: {name}")
         print(f"Price: {price}")
         print(f"Link: {full_link}")
+
+        # Make a request to the product's detail page to scrape the 'product-bottom' section
+        if link != "No link found":
+            product_response = requests.get(full_link, headers=headers)
+            if product_response.status_code == 200:
+                product_soup = BeautifulSoup(product_response.content, 'html.parser')
+                # Find the 'product-bottom' section and print its content
+                product_bottom = product_soup.find('section', class_='product-bottom')
+                if product_bottom:
+                    print("Product-Bottom Section:")
+                    print(product_bottom.get_text(strip=True))
+                else:
+                    print("No 'product-bottom' section found.")
+            else:
+                print(f"Failed to retrieve the product page. Status code: {product_response.status_code}")
+
         print("-" * 40)
 else:
     print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
