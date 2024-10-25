@@ -1,3 +1,5 @@
+from functools import reduce
+from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -42,6 +44,11 @@ def extract_and_convert_to_int(text):
 def add_space_before_uppercase(text):
     # Use regex to add a space before each uppercase letter only if it's not preceded or followed by another uppercase letter.
     return re.sub(r'(?<![A-Z])([A-Z])(?![A-Z])', r' \1', text).strip()
+
+def sort_dict_by_price(data):
+    # Sort dictionary by 'Price' in the nested dictionaries
+    sorted_data = dict(sorted(data.items(), key=lambda item: item[1]['Price']))
+    return sorted_data
 
 def option_one():
     url = "https://bomba.md/ro/category/telefoane-mobile-686094/apple/"
@@ -198,10 +205,12 @@ def option_three():
     else:
         print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
 
-def option_four():
+def option_four(price_min, price_max):
+
     # URL of the website you want to scrape
     url = "https://bomba.md/ro/category/telefoane-mobile-686094/apple/"
     product_dict = {}
+
     # Headers to mimic a browser request
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
@@ -209,6 +218,7 @@ def option_four():
 
     # Send a GET request to the website with headers
     response = requests.get(url, headers=headers)
+
     # Check if the request was successful
     if response.status_code == 200:
         # Parse the HTML content with BeautifulSoup
@@ -224,7 +234,7 @@ def option_four():
             name_tag = product.find('div', class_='product__name')
             name = name_tag.get_text(strip=True) if name_tag else "No name found"
             livrare = name
-            livrare = 'Prin' + livrare.split('Prin', 1)[1]
+            livrare = 'Prin' + livrare.split('Prin', 1)[1] if 'Prin' in livrare else livrare
             name = name.split('Prin')[0]
 
             # Extract the product price
@@ -238,40 +248,26 @@ def option_four():
             # Construct the full link if it's a relative path
             full_link = f"https://bomba.md{link}" if link.startswith('/') else link
 
-            print(f"Product Name: {name}")
-            print(f"Price: {price_int}")
-            print(f"Order time: {livrare}")
-            print(f"Link: {full_link}")
+            # Store the product information in the dictionary
             product_dict[id] = {
                 'Name': name,
-                'Price': price_int,
+                # Step 1: Convert all product prices
+                'Price': round(price_int / 19),
                 'Order time': livrare,
                 'Link': full_link
             }
             id += 1
-            # Make a request to the product's detail page to scrape the 'product-bottom' section
-            if link != "No link found":
-                product_response = requests.get(full_link, headers=headers)
-                if product_response.status_code == 200:
-                    product_soup = BeautifulSoup(product_response.content, 'html.parser')
-                    # Find the 'product-bottom' section and print its content
-                    product_bottom = product_soup.find('section', class_='product-bottom')
-                    if product_bottom:
-                        # Extract the text from product_bottom
-                        product_bottom_text = product_bottom.get_text(strip=True)
-                        # Add space before uppercase letters
-                        spaced_product_bottom = add_space_before_uppercase(product_bottom_text)
-                        product_dict[id]['Specifications'] = spaced_product_bottom
-                        print("Product-Bottom Section:")
-                        print(spaced_product_bottom)
-                    else:
-                        print("No 'product-bottom' section found.")
-                else:
-                    print(f"Failed to retrieve the product page. Status code: {product_response.status_code}")
 
-            print("-" * 40)
-    else:
-        print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
+        product_dict = sort_dict_by_price(product_dict)
+        backup = product_dict
+        keys = list(product_dict.keys())
+        for key in keys:
+            if product_dict[key]["Price"] < price_min or product_dict[key]["Price"] > price_max:
+                product_dict.pop(key, None)
+        total_price = reduce(lambda acc, item: acc + item['Price'], product_dict.values(), 0)
+        utc_timestamp = datetime.now(timezone.utc)
+        print(total_price)
+        print("UTC Timestamp:", utc_timestamp)
 
 while True:
     option = menu()
@@ -281,3 +277,6 @@ while True:
         option_two()
     elif option == 3:
         option_three()
+    elif option == 4:
+        option_four(1000,2000)
+
