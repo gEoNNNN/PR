@@ -3,10 +3,11 @@ from bs4 import BeautifulSoup
 from functools import reduce
 from datetime import datetime, timezone
 
+
 url = 'https://maximum.md/ro/telefoane-si-gadgeturi/telefoane-si-comunicatii/smartphoneuri/'
 
-response = requests.get(url)
 
+response = requests.get(url)
 
 def scrape_func(text):
     soup = BeautifulSoup(text, 'html.parser')
@@ -28,6 +29,7 @@ def scrape_func(text):
 
         link_tag = product.find('a', href=True)
         product_link = 'https://maximum.md' + link_tag['href'] if link_tag else "Link not found"
+
 
         product_response = requests.get(product_link)
         if product_response.status_code == 200:
@@ -82,7 +84,6 @@ def scrape_func(text):
 
     return products_in_eur
 
-
 def serialize_to_json(filtered_products):
     json_str = "[\n"
     for product in filtered_products:
@@ -113,13 +114,13 @@ def serialize_to_xml(filtered_products):
 if __name__ == "__main__":
     if response.status_code == 200:
         filtered_products = scrape_func(response.text)
+        
+        json_output = serialize_to_json(filtered_products)
+        print("JSON Output:")
+        print(json_output)
 
-        # json_output = serialize_to_json(filtered_products)
-        # print("JSON Output:")
-        # print(json_output)
-        #
-        # xml_output = serialize_to_xml(filtered_products)
-        # print("\nXML Output:")
-        # print(xml_output)
+        xml_output = serialize_to_xml(filtered_products)
+        print("\nXML Output:")
+        print(xml_output)
     else:
         print(f"Failed to retrieve the listing page. Status Code: {response.status_code}")
