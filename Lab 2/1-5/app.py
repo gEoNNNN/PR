@@ -7,9 +7,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-@app.before_first_request
 def create_tables():
-    db.create_all()
+    with app.app_context():
+        db.create_all()
 
 # CREATE
 @app.route('/products', methods=['POST'])
@@ -86,10 +86,9 @@ def upload_file():
 
     if file:
         file_contents = file.read().decode('utf-8')
-
         print(file_contents)
-
         return jsonify({'message': 'File content received', 'contents': file_contents}), 200
 
 if __name__ == '__main__':
+    create_tables()
     app.run(debug=True)

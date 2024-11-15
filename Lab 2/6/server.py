@@ -36,12 +36,18 @@ def handle(client):
             break
 
 def receive():
+    print("Serverul a fost pornit")
+    with open("file.txt", "r") as file:
+        content = file.read()
+        print(content)
     while True:
         # accept all the connections
         client, address = server.accept()
         print(f"Sa conectat cu adresa: {str(address)}")
         # first message will be the nickname
         # sent the key word to send the nickname to the server
+        with open("file.txt", "a") as file:
+            file.write(f'Nick\n')
         client.send('Nick'.encode('ascii'))
         nickname = client.recv(1024).decode("ascii")
         nicknames.append(nickname)
